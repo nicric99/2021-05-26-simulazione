@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
@@ -17,10 +18,15 @@ public class Model {
 	private Graph<Business,DefaultWeightedEdge> grafo;
 	private Map<String,Business> idMap;
 	private YelpDao dao;
+	
+	private List<Business> cammino;
+	private Business migliore;
+	
 	public Model() {
 		this.grafo= new SimpleDirectedWeightedGraph<>(DefaultWeightedEdge.class);
 		dao=new YelpDao();
 		idMap= new HashMap<>();
+		cammino=new ArrayList<>();
 	}
 	
 	public List<String> getCitta(){
@@ -32,6 +38,46 @@ public class Model {
 		for(Adiacenza a: dao.getArchi(idMap, anno, citta)) {
 			Graphs.addEdge(this.grafo, a.getSorgente(),a.getDestinazione(), a.getPeso());
 		}
+		
+	}
+	public List<Business> trovaCammino(Double soglia,Business sorgente,Business migliore){
+		List<Business> parziale= new ArrayList<>();
+		this.migliore= migliore;
+		parziale.add(sorgente);
+		cerca(parziale,soglia);
+		return cammino;	
+	}
+	public void cerca(List<Business> parziale,Double soglia) {
+		// terminazione
+		if(parziale.get(parziale.size()-1).equals(this.migliore)) {
+			if(parziale.size()<cammino.size()) {
+				this.cammino= new ArrayList<>(parziale);
+			}
+			return;
+		}
+		
+		for(Business b:Graphs.neighborListOf(this.grafo, parziale.get(parziale.size()-1))) {
+			DefaultWeightedEdge e= this.grafo.getEdge(parziale.get(parziale.size()-1), b);
+			if(this.grafo.outgoingEdgesOf(parziale.get(parziale.size()-1)).contains(e)) {
+				
+			if(accettabile(parziale.get(parziale.size()-1),b,soglia) && !parziale.contains(b)) {
+				parziale.add(b);
+				cerca(parziale,soglia);
+				parziale.remove(b);
+			} 
+		}
+			
+		}	
+		
+	}
+	private boolean accettabile(Business sorgente,Business destinazione,Double soglia) {
+		DefaultWeightedEdge e= this.grafo.getEdge(sorgente, destinazione);
+		if(this.grafo.outgoingEdgesOf(sorgente).contains(e)) {
+			if(this.grafo.getEdgeWeight(e)>=soglia) {
+				return true;
+			}
+		}
+		return false;
 		
 	}
 	public Integer getNVertici() {
@@ -59,6 +105,11 @@ public class Model {
 		Collections.sort(result);
 		Collections.reverse(result);
 		return result;
+	}
+
+	public Set<Business> getVertici() {
+		
+		return this.grafo.vertexSet();
 	}
 	
 }
