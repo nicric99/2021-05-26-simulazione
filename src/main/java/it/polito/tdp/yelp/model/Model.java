@@ -43,6 +43,7 @@ public class Model {
 	public List<Business> trovaCammino(Double soglia,Business sorgente,Business migliore){
 		List<Business> parziale= new ArrayList<>();
 		this.migliore= migliore;
+		cammino=null;
 		parziale.add(sorgente);
 		cerca(parziale,soglia);
 		return cammino;	
@@ -50,6 +51,10 @@ public class Model {
 	public void cerca(List<Business> parziale,Double soglia) {
 		// terminazione
 		if(parziale.get(parziale.size()-1).equals(this.migliore)) {
+			if(cammino==null) {
+				this.cammino= new ArrayList<>(parziale);
+				return;
+			}
 			if(parziale.size()<cammino.size()) {
 				this.cammino= new ArrayList<>(parziale);
 			}
